@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Optional, List
-from bot.database.models import db
+import bot.database.models as models
 from bot.utils.logger import logger
 
 async def _ensure_connected():
