@@ -4,7 +4,7 @@ import bot.database.models as models
 from bot.utils.logger import logger
 
 async def _ensure_connected():
-    await db.connect()
+    await models.db.connect()
 
 # ------------------- Users -------------------
 async def create_user(user_data: dict) -> dict:
@@ -27,25 +27,25 @@ async def create_user(user_data: dict) -> dict:
         "use_global_cookies": True,
         "created_at": datetime.utcnow()
     }
-    await db.db.users.update_one({"user_id": user["user_id"]}, {"$set": user}, upsert=True)
+    await models.db.db.users.update_one({"user_id": user["user_id"]}, {"$set": user}, upsert=True)
     return await get_user(user["user_id"])
 
 async def get_user(user_id: int) -> Optional[dict]:
     await _ensure_connected()
-    return await db.db.users.find_one({"user_id": user_id})
+    return await models.db.db.users.find_one({"user_id": user_id})
 
 async def update_user(user_id: int, update: dict):
     await _ensure_connected()
-    await db.db.users.update_one({"user_id": user_id}, {"$set": update})
+    await models.db.db.users.update_one({"user_id": user_id}, {"$set": update})
 
 async def get_all_users(filter_criteria: dict = {}) -> List[dict]:
     await _ensure_connected()
-    cursor = db.db.users.find(filter_criteria)
+    cursor = models.db.db.users.find(filter_criteria)
     return await cursor.to_list(length=None)
 
 async def count_users(filter_criteria: dict = {}) -> int:
     await _ensure_connected()
-    return await db.db.users.count_documents(filter_criteria)
+    return await models.db.db.users.count_documents(filter_criteria)
 
 # ------------------- Premium -------------------
 async def set_premium(user_id: int, days: int):
@@ -77,16 +77,16 @@ async def add_download_log(user_id: int, url: str, file_name: str, file_size: in
         "uploaded_to": uploaded_to,
         "timestamp": datetime.utcnow()
     }
-    await db.db.downloads.insert_one(log)
+    await models.db.db.downloads.insert_one(log)
 
 async def get_user_downloads(user_id: int, limit: int = 20) -> List[dict]:
     await _ensure_connected()
-    cursor = db.db.downloads.find({"user_id": user_id}).sort("timestamp", -1).limit(limit)
+    cursor = models.db.db.downloads.find({"user_id": user_id}).sort("timestamp", -1).limit(limit)
     return await cursor.to_list(length=limit)
 
 async def increment_daily_count(user_id: int):
     today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    await db.db.users.update_one(
+    await models.db.db.users.update_one(
         {"user_id": user_id},
         {"$inc": {"daily_count": 1}, "$set": {"last_download_date": today}}
     )
@@ -114,7 +114,7 @@ async def remove_user_cookies(user_id: int):
 
 async def set_owner_cookies(encrypted_cookies: str):
     await _ensure_connected()
-    await db.db.global_cookies.update_one(
+    await models.db.db.global_cookies.update_one(
         {"type": "owner"},
         {"$set": {"cookies_encrypted": encrypted_cookies, "updated_at": datetime.utcnow()}},
         upsert=True
@@ -122,12 +122,12 @@ async def set_owner_cookies(encrypted_cookies: str):
 
 async def get_owner_cookies() -> Optional[str]:
     await _ensure_connected()
-    doc = await db.db.global_cookies.find_one({"type": "owner"})
+    doc = await models.db.db.global_cookies.find_one({"type": "owner"})
     return doc.get("cookies_encrypted") if doc else None
 
 async def remove_owner_cookies():
     await _ensure_connected()
-    await db.db.global_cookies.delete_one({"type": "owner"})
+    await models.db.db.global_cookies.delete_one({"type": "owner"})
 
 # ------------------- Ban -------------------
 async def ban_user(user_id: int):
@@ -150,4 +150,4 @@ async def add_system_log(level: str, message: str, user_id: Optional[int] = None
         "extra": extra or {},
         "timestamp": datetime.utcnow()
     }
-    await db.db.logs.insert_one(log)
+    await models.db.db.logs.insert_one(log)
