@@ -15,7 +15,7 @@ async def add_premium_cmd(client, message: Message):
         user_id = int(args[1])
         days = int(args[2])
     except ValueError:
-        await message.reply_text("Invalid input.")
+        await message.reply_text("Invalid user_id or days.")
         return
     user = await get_user(user_id)
     if not user:
@@ -23,7 +23,7 @@ async def add_premium_cmd(client, message: Message):
         return
     await set_premium(user_id, days)
     await message.reply_text(f"✅ Premium added to user {user_id} for {days} days.")
-    logger.info(f"Admin {message.from_user.id} added premium to {user_id}")
+    logger.info(f"Admin {message.from_user.id} added premium to {user_id} for {days} days")
 
 @Client.on_message(filters.command("removepremium") & filters.private & admin_only)
 async def remove_premium_cmd(client, message: Message):
@@ -77,4 +77,5 @@ async def get_premium_cmd(client, message: Message):
 async def premium_stats_cmd(client, message: Message):
     total = await count_users()
     premium = await count_users({"is_premium": True, "premium_expiry": {"$gt": datetime.utcnow()}})
-    await message.reply_text(f"📊 Premium Stats\nTotal Users: {total}\nPremium Users: {premium}")
+    text = f"📊 Premium Statistics\nTotal Users: {total}\nPremium Users: {premium}"
+    await message.reply_text(text)
