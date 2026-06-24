@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Optional, Callable, Awaitable
 from bot.config import Config
 from bot.utils.logger import logger
-from bot.database.crud import add_system_log
 
 @dataclass
 class DownloadJob:
@@ -50,7 +49,10 @@ class DownloadQueue:
         logger.info("All workers stopped.")
 
     async def _worker(self):
+        # Lazy import to avoid circular import
         from bot.utils.ytdl import YouTubeDL
+        from bot.database.crud import add_system_log
+        
         while self.running:
             try:
                 priority, job = await asyncio.wait_for(self.queue.get(), timeout=1.0)
