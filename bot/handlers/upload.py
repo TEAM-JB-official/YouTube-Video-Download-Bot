@@ -16,7 +16,7 @@ async def set_chat_cmd(client, message: Message):
     try:
         chat_id = int(args[1])
     except ValueError:
-        await message.reply_text("Invalid chat ID.")
+        await message.reply_text("Invalid chat ID. Must be an integer.")
         return
     await set_user_upload_chat(message.from_user.id, chat_id)
     await message.reply_text(f"✅ Upload destination set to chat ID: {chat_id}")
@@ -26,7 +26,7 @@ async def set_chat_cmd(client, message: Message):
 @check_ban
 async def remove_chat_cmd(client, message: Message):
     await remove_user_upload_chat(message.from_user.id)
-    await message.reply_text("✅ Upload destination removed. Files sent to DM.")
+    await message.reply_text("✅ Upload destination removed. Files will be sent to your DM.")
 
 async def upload_file(user_id: int, file_path: str, chat_id: int, caption: str, thumbnail_path=None) -> bool:
     from bot.main import app
