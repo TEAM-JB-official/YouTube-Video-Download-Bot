@@ -1,6 +1,5 @@
 from functools import wraps
 from pyrogram.types import Message
-from bot.database.crud import is_user_banned
 from bot.config import Config
 from aiolimiter import AsyncLimiter
 from bot.utils.logger import logger
@@ -35,6 +34,8 @@ def admin_only(func):
 def check_ban(func):
     @wraps(func)
     async def wrapper(client, message: Message):
+        # Lazy import to avoid circular import
+        from bot.database.crud import is_user_banned
         if await is_user_banned(message.from_user.id):
             await message.reply_text("🚫 You are banned from using this bot.")
             return
