@@ -13,7 +13,10 @@ async def start_cmd(client, message: Message):
     if not user:
         user = await create_user(message.from_user.__dict__)
     await message.reply_text(
-        f"👋 Welcome {user['first_name']}!\n\nSend me a YouTube URL to download.\nUse /help for commands.",
+        f"👋 Welcome {user['first_name']}!\n\n"
+        "I can download videos, audio, playlists, and live streams from YouTube.\n"
+        "Send me a YouTube URL to get started.\n\n"
+        "Use /help for more information.",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("📚 Help", callback_data="help"),
              InlineKeyboardButton("💰 Plans", callback_data="plans")]
@@ -26,12 +29,28 @@ async def start_cmd(client, message: Message):
 async def help_cmd(client, message: Message):
     text = (
         "📖 **Help & Commands**\n\n"
-        "**Download**\nSend a YouTube URL (video, Short, playlist, live).\nMultiple URLs per line for batch.\n\n"
-        "**Account**\n/account - Your info\n/plan - Plans\n/myplan - Your plan\n/terms - ToS\n/status - Queue status\n\n"
-        "**Upload**\n/setchat <chat_id> - Set upload destination\n/removechat - Remove it\n\n"
-        "**Thumbnail**\n/setthumbnail (reply to photo) - Set custom\n/remthumbnail - Remove\n\n"
-        "**Cookies**\n/setcookies (reply to cookies.txt) - Upload\n/removecookies - Remove\n/cookieinfo - Check\n/cookiecheck - Validate\n\n"
-        "**Premium**\nUnlimited downloads, priority, larger files, playlists, live streams."
+        "**Download**\n"
+        "Send a YouTube URL (video, Short, playlist, live).\n"
+        "Multiple URLs per line for batch.\n\n"
+        "**Account**\n"
+        "/account - Your account info\n"
+        "/plan - View premium plans\n"
+        "/myplan - Your current plan\n"
+        "/terms - Terms of service\n"
+        "/status - Queue status\n\n"
+        "**Upload**\n"
+        "/setchat <chat_id> - Set upload destination\n"
+        "/removechat - Remove custom destination\n\n"
+        "**Thumbnail**\n"
+        "/setthumbnail (reply to photo) - Set custom thumbnail\n"
+        "/remthumbnail - Remove custom thumbnail\n\n"
+        "**Cookies**\n"
+        "/setcookies (reply to cookies.txt) - Upload your cookies\n"
+        "/removecookies - Remove your cookies\n"
+        "/cookieinfo - Check your cookie status\n"
+        "/cookiecheck - Validate your cookies\n\n"
+        "**Premium**\n"
+        "Unlimited downloads, priority queue, larger files, playlists, live streams."
     )
     await message.reply_text(text)
 
@@ -73,6 +92,7 @@ async def plan_cmd(client, message: Message):
         "✅ File size up to 2GB\n"
         "✅ Playlist downloads\n"
         "✅ Live stream recording\n"
+        "✅ Custom thumbnail\n"
         "✅ No daily limits\n\n"
         "Contact @admin to purchase."
     )
@@ -99,7 +119,7 @@ async def myplan_cmd(client, message: Message):
 async def terms_cmd(client, message: Message):
     text = (
         "📜 **Terms of Service**\n\n"
-        "1. Personal use only.\n"
+        "1. This bot is for personal use only.\n"
         "2. Do not share copyrighted content.\n"
         "3. You are responsible for the content you download.\n"
         "4. We reserve the right to ban users who misuse the bot.\n"
@@ -116,4 +136,5 @@ async def status_cmd(client, message: Message):
     from bot.main import download_queue
     pending = download_queue.pending_count
     processing = len(download_queue.processing)
-    await message.reply_text(f"📋 **Queue Status**\n\nPending: {pending}\nProcessing: {processing}")
+    text = f"📋 **Queue Status**\n\nPending: {pending}\nProcessing: {processing}"
+    await message.reply_text(text)
