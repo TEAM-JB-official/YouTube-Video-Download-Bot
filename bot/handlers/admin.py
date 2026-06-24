@@ -6,6 +6,7 @@ from bot.utils.logger import logger
 from bot.config import Config
 import shutil
 import asyncio
+from datetime import datetime
 
 @Client.on_message(filters.command("stats") & filters.private & admin_only)
 async def stats_cmd(client, message: Message):
@@ -15,7 +16,7 @@ async def stats_cmd(client, message: Message):
     total, used, free = shutil.disk_usage(Config.DOWNLOAD_PATH)
     storage = f"{used // (1024**3)} GB / {total // (1024**3)} GB"
     text = (
-        f"📊 **Statistics**\n\n"
+        f"📊 **Bot Statistics**\n\n"
         f"Total Users: {total_users}\n"
         f"Premium Users: {premium_users}\n"
         f"Banned Users: {banned}\n"
