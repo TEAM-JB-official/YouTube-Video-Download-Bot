@@ -161,6 +161,7 @@ class YouTubeDL:
                 os.remove(cookie_file)
 
     async def download_playlist(self, job) -> Optional[Tuple[str, dict]]:
+        # Lazy import to avoid circular import
         from bot.utils.queue import DownloadJob
         from bot.main import download_queue
         cookie_file = await self.get_cookie_file()
