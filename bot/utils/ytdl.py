@@ -4,7 +4,7 @@ import yt_dlp
 from datetime import datetime
 from typing import Optional, Tuple
 from bot.database.crud import get_user, get_owner_cookies, add_download_log, increment_daily_count
-from bot.database.models import db
+import bot.database.models as models
 from bot.config import Config
 from bot.utils.helpers import decrypt_cookies, create_temp_cookie_file
 from bot.utils.logger import logger
@@ -17,7 +17,6 @@ class YouTubeDL:
         self.progress = {}
 
     async def get_cookie_file(self) -> Optional[str]:
-        # 1. Owner cookies
         owner_enc = await get_owner_cookies()
         if owner_enc:
             try:
@@ -26,7 +25,6 @@ class YouTubeDL:
                     return create_temp_cookie_file(owner_content)
             except Exception as e:
                 logger.error(f"Owner cookie decryption failed: {e}")
-        # 2. User cookies
         user = await get_user(self.user_id)
         if user and user.get('cookies_encrypted'):
             try:
@@ -42,7 +40,10 @@ class YouTubeDL:
             user = await get_user(self.user_id)
             today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
             if user.get('last_download_date') != today:
-                await db.db.users.update_one({"user_id": self.user_id}, {"$set": {"daily_count": 0, "last_download_date": today}})
+                await models.db.db.users.update_one(
+                    {"user_id": self.user_id}, 
+                    {"$set": {"daily_count": 0, "last_download_date": today}}
+                )
             if user.get('daily_count', 0) >= Config.DAILY_LIMIT:
                 logger.warning(f"User {self.user_id} daily limit reached.")
                 return False
