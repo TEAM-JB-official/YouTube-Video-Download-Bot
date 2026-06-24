@@ -3,10 +3,10 @@ import asyncio
 import yt_dlp
 from datetime import datetime
 from typing import Optional, Tuple
-from bot.database.crud import get_user, get_owner_cookies, set_user_cookies, add_download_log, increment_daily_count
+from bot.database.crud import get_user, get_owner_cookies, add_download_log, increment_daily_count
 from bot.database.models import db
 from bot.config import Config
-from bot.utils.helpers import decrypt_cookies, create_temp_cookie_file, progress_bar
+from bot.utils.helpers import decrypt_cookies, create_temp_cookie_file
 from bot.utils.logger import logger
 from bot.handlers.upload import upload_file
 
@@ -42,7 +42,7 @@ class YouTubeDL:
             user = await get_user(self.user_id)
             today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
             if user.get('last_download_date') != today:
-                await db.users.update_one({"user_id": self.user_id}, {"$set": {"daily_count": 0, "last_download_date": today}})
+                await db.db.users.update_one({"user_id": self.user_id}, {"$set": {"daily_count": 0, "last_download_date": today}})
             if user.get('daily_count', 0) >= Config.DAILY_LIMIT:
                 logger.warning(f"User {self.user_id} daily limit reached.")
                 return False
@@ -183,7 +183,7 @@ class YouTubeDL:
                             priority=job.priority
                         )
                         await download_queue.add_job(sub_job)
-                    return True  # handled as separate jobs
+                    return True
                 else:
                     return await self.download_video(job)
         except Exception as e:
@@ -205,13 +205,16 @@ class YouTubeDL:
         thumb = info.get('thumbnail')
         if thumb:
             import aiohttp
-            async with aiohttp.ClientSession() as session:
-                async with session.get(thumb) as resp:
-                    if resp.status == 200:
-                        path = os.path.join(Config.DOWNLOAD_PATH, str(self.user_id), 'thumb.jpg')
-                        with open(path, 'wb') as f:
-                            f.write(await resp.read())
-                        return path
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(thumb) as resp:
+                        if resp.status == 200:
+                            path = os.path.join(Config.DOWNLOAD_PATH, str(self.user_id), 'thumb.jpg')
+                            with open(path, 'wb') as f:
+                                f.write(await resp.read())
+                            return path
+            except:
+                pass
         return None
 
     async def get_user_thumbnail(self) -> Optional[str]:
