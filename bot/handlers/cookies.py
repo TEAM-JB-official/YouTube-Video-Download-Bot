@@ -16,7 +16,7 @@ async def set_cookies_cmd(client, message: Message):
         return
     doc = message.reply_to_message.document
     if not doc.file_name.endswith('.txt'):
-        await message.reply_text("Please upload a .txt file.")
+        await message.reply_text("Please upload a .txt file (Netscape format).")
         return
     path = await client.download_media(doc)
     try:
@@ -27,9 +27,10 @@ async def set_cookies_cmd(client, message: Message):
             return
         encrypted = encrypt_cookies(content)
         await set_user_cookies(message.from_user.id, encrypted)
-        await message.reply_text("✅ Cookies saved successfully!")
+        await message.reply_text("✅ Cookies saved successfully! They will be used for your downloads.")
     except Exception as e:
-        await message.reply_text(f"❌ Failed: {e}")
+        await message.reply_text(f"❌ Failed to save cookies: {str(e)}")
+        logger.error(f"Cookie save error: {e}")
     finally:
         if os.path.exists(path):
             os.remove(path)
@@ -39,7 +40,7 @@ async def set_cookies_cmd(client, message: Message):
 @check_ban
 async def remove_cookies_cmd(client, message: Message):
     await remove_user_cookies(message.from_user.id)
-    await message.reply_text("✅ Cookies removed.")
+    await message.reply_text("✅ Your cookies have been removed.")
 
 @Client.on_message(filters.command("cookieinfo") & filters.private)
 @rate_limit(limit=3, per=10)
@@ -49,7 +50,7 @@ async def cookie_info_cmd(client, message: Message):
     if user and user.get('cookies_encrypted'):
         await message.reply_text("✅ You have uploaded cookies.")
     else:
-        await message.reply_text("❌ No cookies found.")
+        await message.reply_text("❌ You have not uploaded any cookies.")
 
 @Client.on_message(filters.command("cookiecheck") & filters.private)
 @rate_limit(limit=3, per=10)
@@ -57,18 +58,18 @@ async def cookie_info_cmd(client, message: Message):
 async def cookie_check_cmd(client, message: Message):
     user = await get_user(message.from_user.id)
     if not user or not user.get('cookies_encrypted'):
-        await message.reply_text("❌ No cookies. Use /setcookies.")
+        await message.reply_text("❌ No cookies found. Use /setcookies to upload.")
         return
     try:
         content = decrypt_cookies(user['cookies_encrypted'])
         if validate_cookie_content(content):
-            await message.reply_text("✅ Cookies appear valid.")
+            await message.reply_text("✅ Cookies appear valid (format check passed).")
         else:
-            await message.reply_text("❌ Cookies are invalid. Re-upload.")
+            await message.reply_text("❌ Cookies are invalid or corrupt. Please re-upload.")
     except Exception as e:
-        await message.reply_text(f"❌ Validation error: {e}")
+        await message.reply_text(f"❌ Error validating cookies: {str(e)}")
 
-# Admin commands
+# Admin owner cookie commands
 @Client.on_message(filters.command("setownercookies") & filters.private & admin_only)
 async def set_owner_cookies_cmd(client, message: Message):
     if not message.reply_to_message or not message.reply_to_message.document:
@@ -84,9 +85,9 @@ async def set_owner_cookies_cmd(client, message: Message):
             return
         encrypted = encrypt_cookies(content)
         await set_owner_cookies(encrypted)
-        await message.reply_text("✅ Owner cookies set.")
+        await message.reply_text("✅ Owner cookies set successfully.")
     except Exception as e:
-        await message.reply_text(f"Error: {e}")
+        await message.reply_text(f"Error: {str(e)}")
     finally:
         if os.path.exists(path):
             os.remove(path)
@@ -99,12 +100,16 @@ async def remove_owner_cookies_cmd(client, message: Message):
 @Client.on_message(filters.command("checkcookies") & filters.private & admin_only)
 async def check_cookies_cmd(client, message: Message):
     owner = await get_owner_cookies()
-    await message.reply_text("✅ Owner cookies set." if owner else "❌ No owner cookies set.")
+    if owner:
+        await message.reply_text("✅ Owner cookies are set.")
+    else:
+        await message.reply_text("❌ No owner cookies set.")
 
 @Client.on_message(filters.command("cookie_stats") & filters.private & admin_only)
 async def cookie_stats_cmd(client, message: Message):
     from bot.database.models import db
-    count = await db.users.count_documents({"cookies_encrypted": {"$ne": None}})
+    await db.connect()
+    count = await db.db.users.count_documents({"cookies_encrypted": {"$ne": None}})
     owner = await get_owner_cookies()
-    text = f"🍪 **Cookie Stats**\n\nUsers with cookies: {count}\nOwner cookies: {'✅ Set' if owner else '❌ Not set'}"
+    text = f"🍪 **Cookie Statistics**\n\nUsers with cookies: {count}\nOwner cookies: {'✅ Set' if owner else '❌ Not set'}"
     await message.reply_text(text)
