@@ -2,7 +2,13 @@ from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
 from bot.config import Config
 import asyncio
-from bot.utils.logger import logger
+import sys
+from loguru import logger
+
+# Configure logger if not already configured
+if not logger._core.handlers:
+    logger.remove()
+    logger.add(sys.stdout, format="{time} | {level} | {message}", level="INFO")
 
 class Database:
     def __init__(self):
@@ -11,7 +17,6 @@ class Database:
         self._connected = False
         
     async def connect(self):
-        """Lazy connection to MongoDB with retries"""
         if self._connected:
             return
         
@@ -27,7 +32,6 @@ class Database:
                     connectTimeoutMS=5000,
                     socketTimeoutMS=5000
                 )
-                # Test connection
                 await self.client.admin.command('ping')
                 self.db = self.client[Config.DB_NAME]
                 self._connected = True
@@ -56,5 +60,4 @@ class Database:
         except Exception as e:
             logger.error(f"Index creation failed: {e}")
 
-# Create singleton with lazy connection
 db = Database()
