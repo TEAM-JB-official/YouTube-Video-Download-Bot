@@ -44,7 +44,8 @@ class DownloadQueue:
         self.running = False
         for w in self.workers:
             w.cancel()
-        await asyncio.gather(*self.workers, return_exceptions=True)
+        if self.workers:
+            await asyncio.gather(*self.workers, return_exceptions=True)
         self.workers.clear()
         logger.info("All workers stopped.")
 
