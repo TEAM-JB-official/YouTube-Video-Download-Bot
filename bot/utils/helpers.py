@@ -2,20 +2,40 @@ import os
 import tempfile
 from cryptography.fernet import Fernet
 from bot.config import Config
+from bot.utils.logger import logger
 
-fernet = Fernet(Config.COOKIE_ENCRYPTION_KEY.encode()) if Config.COOKIE_ENCRYPTION_KEY else None
+# Lazy initialization of Fernet
+_fernet = None
+
+def get_fernet():
+    global _fernet
+    if _fernet is None:
+        if not Config.COOKIE_ENCRYPTION_KEY:
+            logger.warning("COOKIE_ENCRYPTION_KEY not set. Cookie encryption disabled.")
+            return None
+        try:
+            _fernet = Fernet(Config.COOKIE_ENCRYPTION_KEY.encode())
+        except Exception as e:
+            logger.error(f"Failed to initialize Fernet: {e}. Cookie encryption disabled.")
+            return None
+    return _fernet
 
 def encrypt_cookies(plain_text: str) -> str:
+    fernet = get_fernet()
     if not fernet:
-        raise ValueError("COOKIE_ENCRYPTION_KEY not set")
+        logger.warning("Encryption disabled, storing cookies in plain text!")
+        return plain_text
     return fernet.encrypt(plain_text.encode()).decode()
 
 def decrypt_cookies(encrypted: str) -> str:
+    fernet = get_fernet()
     if not fernet:
-        raise ValueError("COOKIE_ENCRYPTION_KEY not set")
+        logger.warning("Encryption disabled, returning cookies as plain text!")
+        return encrypted
     return fernet.decrypt(encrypted.encode()).decode()
 
 def validate_cookie_content(content: str) -> bool:
+    """Basic validation for Netscape cookies."""
     lines = content.splitlines()
     for line in lines:
         if line.startswith('#') or not line.strip():
