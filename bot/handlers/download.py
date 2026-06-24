@@ -51,12 +51,11 @@ async def download_callback(client, callback_query: CallbackQuery):
 
     urls = getattr(client, 'user_urls', {}).get(user_id, [])
     if not urls:
-        await callback_query.answer("No URLs found.", show_alert=True)
+        await callback_query.answer("No URLs found. Please send again.", show_alert=True)
         return
 
     if action == 'video':
-        quality = 'best'
-        await process_urls(client, callback_query.message, user_id, urls, 'video', quality)
+        await process_urls(client, callback_query.message, user_id, urls, 'video', 'best')
     elif action == 'audio':
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("128k MP3", callback_data=f"q_128_{user_id}"),
@@ -68,8 +67,7 @@ async def download_callback(client, callback_query: CallbackQuery):
         ])
         await callback_query.message.edit_text("Select audio quality:", reply_markup=keyboard)
     elif action == 'playlist':
-        quality = 'best'
-        await process_urls(client, callback_query.message, user_id, urls, 'playlist', quality)
+        await process_urls(client, callback_query.message, user_id, urls, 'playlist', 'best')
 
 @Client.on_callback_query(filters.regex(r'^q_(\d+)(m4a)?_(\d+)$'))
 async def quality_callback(client, callback_query: CallbackQuery):
