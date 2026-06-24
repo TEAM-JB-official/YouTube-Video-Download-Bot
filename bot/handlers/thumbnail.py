@@ -12,7 +12,7 @@ async def set_thumbnail_cmd(client, message: Message):
         return
     file_id = message.reply_to_message.photo.file_id
     await set_user_thumbnail(message.from_user.id, file_id)
-    await message.reply_text("✅ Thumbnail set!")
+    await message.reply_text("✅ Thumbnail set successfully!")
 
 @Client.on_message(filters.command("remthumbnail") & filters.private)
 @rate_limit(limit=3, per=10)
