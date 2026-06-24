@@ -1,0 +1,11 @@
+pyrogram==2.0.106
+yt-dlp==2024.7.9
+motor==3.3.2
+pymongo==4.6.1
+python-dotenv==1.0.1
+aiolimiter==1.1.0
+loguru==0.7.2
+cryptography==41.0.7
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+aiohttp==3.9.0
