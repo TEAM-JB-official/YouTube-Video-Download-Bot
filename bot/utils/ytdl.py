@@ -3,12 +3,9 @@ import asyncio
 import yt_dlp
 from datetime import datetime
 from typing import Optional, Tuple
-from bot.database.crud import get_user, get_owner_cookies, add_download_log, increment_daily_count
-import bot.database.models as models
 from bot.config import Config
 from bot.utils.helpers import decrypt_cookies, create_temp_cookie_file
 from bot.utils.logger import logger
-from bot.handlers.upload import upload_file
 
 class YouTubeDL:
     def __init__(self, user_id: int, is_premium: bool):
@@ -17,6 +14,9 @@ class YouTubeDL:
         self.progress = {}
 
     async def get_cookie_file(self) -> Optional[str]:
+        # Lazy import to avoid circular import
+        from bot.database.crud import get_owner_cookies, get_user
+        
         owner_enc = await get_owner_cookies()
         if owner_enc:
             try:
@@ -36,6 +36,10 @@ class YouTubeDL:
         return None
 
     async def process_job(self, job) -> bool:
+        # Lazy import to avoid circular import
+        from bot.database.crud import get_user, add_download_log, increment_daily_count
+        import bot.database.models as models
+        
         if not self.is_premium:
             user = await get_user(self.user_id)
             today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -68,6 +72,9 @@ class YouTubeDL:
         upload_chat = job.upload_chat if job.upload_chat else self.user_id
         caption = job.caption or self.build_caption(info)
         thumbnail = await self.get_thumbnail(info) or await self.get_user_thumbnail()
+        
+        # Lazy import for upload
+        from bot.handlers.upload import upload_file
         success = await upload_file(self.user_id, file_path, upload_chat, caption, thumbnail)
         if success:
             await increment_daily_count(self.user_id)
@@ -220,6 +227,8 @@ class YouTubeDL:
         return None
 
     async def get_user_thumbnail(self) -> Optional[str]:
+        # Lazy import to avoid circular import
+        from bot.database.crud import get_user
         user = await get_user(self.user_id)
         return user.get('thumbnail_file_id') if user else None
 
