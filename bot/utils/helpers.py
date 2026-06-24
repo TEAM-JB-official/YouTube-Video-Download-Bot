@@ -1,50 +1,65 @@
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from bot.database.crud import set_user_upload_chat, remove_user_upload_chat
-from bot.utils.decorators import rate_limit, check_ban
-from bot.utils.logger import logger
 import os
+import tempfile
+from cryptography.fernet import Fernet
+from bot.config import Config
+from bot.utils.logger import logger
 
-@Client.on_message(filters.command("setchat") & filters.private)
-@rate_limit(limit=3, per=10)
-@check_ban
-async def set_chat_cmd(client, message: Message):
-    args = message.text.split()
-    if len(args) != 2:
-        await message.reply_text("Usage: /setchat <chat_id> (negative for group/channel)")
-        return
-    try:
-        chat_id = int(args[1])
-    except ValueError:
-        await message.reply_text("Invalid chat ID. Must be an integer.")
-        return
-    await set_user_upload_chat(message.from_user.id, chat_id)
-    await message.reply_text(f"✅ Upload destination set to chat ID: {chat_id}")
+_fernet = None
 
-@Client.on_message(filters.command("removechat") & filters.private)
-@rate_limit(limit=3, per=10)
-@check_ban
-async def remove_chat_cmd(client, message: Message):
-    await remove_user_upload_chat(message.from_user.id)
-    await message.reply_text("✅ Upload destination removed. Files will be sent to your DM.")
+def get_fernet():
+    global _fernet
+    if _fernet is None:
+        if not Config.COOKIE_ENCRYPTION_KEY:
+            logger.warning("COOKIE_ENCRYPTION_KEY not set. Cookie encryption disabled.")
+            return None
+        try:
+            _fernet = Fernet(Config.COOKIE_ENCRYPTION_KEY.encode())
+        except Exception as e:
+            logger.error(f"Failed to initialize Fernet: {e}. Cookie encryption disabled.")
+            return None
+    return _fernet
 
-async def upload_file(user_id: int, file_path: str, chat_id: int, caption: str, thumbnail_path=None) -> bool:
-    from bot.main import app
-    try:
-        if file_path.lower().endswith(('.mp4', '.mkv', '.avi')):
-            if thumbnail_path and os.path.exists(thumbnail_path):
-                await app.send_video(chat_id, video=file_path, caption=caption, thumb=thumbnail_path, supports_streaming=True)
-            else:
-                await app.send_video(chat_id, video=file_path, caption=caption, supports_streaming=True)
-        elif file_path.lower().endswith(('.mp3', '.m4a')):
-            if thumbnail_path and os.path.exists(thumbnail_path):
-                await app.send_audio(chat_id, audio=file_path, caption=caption, thumb=thumbnail_path)
-            else:
-                await app.send_audio(chat_id, audio=file_path, caption=caption)
-        else:
-            await app.send_document(chat_id, document=file_path, caption=caption)
-        logger.info(f"Uploaded {file_path} to {chat_id}")
-        return True
-    except Exception as e:
-        logger.error(f"Upload failed: {e}")
-        return False
+def encrypt_cookies(plain_text: str) -> str:
+    fernet = get_fernet()
+    if not fernet:
+        logger.warning("Encryption disabled, storing cookies in plain text!")
+        return plain_text
+    return fernet.encrypt(plain_text.encode()).decode()
+
+def decrypt_cookies(encrypted: str) -> str:
+    fernet = get_fernet()
+    if not fernet:
+        logger.warning("Encryption disabled, returning cookies as plain text!")
+        return encrypted
+    return fernet.decrypt(encrypted.encode()).decode()
+
+def validate_cookie_content(content: str) -> bool:
+    lines = content.splitlines()
+    for line in lines:
+        if line.startswith('#') or not line.strip():
+            continue
+        parts = line.strip().split('\t')
+        if len(parts) >= 7:
+            return True
+    return False
+
+def create_temp_cookie_file(content: str) -> str:
+    fd, path = tempfile.mkstemp(suffix='.txt', prefix='cookies_')
+    with os.fdopen(fd, 'w') as f:
+        f.write(content)
+    return path
+
+def format_file_size(size_bytes: int) -> str:
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size_bytes < 1024:
+            return f"{size_bytes:.1f} {unit}"
+        size_bytes /= 1024
+    return f"{size_bytes:.1f} TB"
+
+def progress_bar(current: int, total: int, width: int = 20) -> str:
+    if total == 0:
+        return "0%"
+    percent = current / total
+    filled = int(percent * width)
+    bar = '█' * filled + '░' * (width - filled)
+    return f"{bar} {percent*100:.1f}%"
