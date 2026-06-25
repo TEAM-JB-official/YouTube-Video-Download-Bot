@@ -1,7 +1,8 @@
 import asyncio
 from fastapi import FastAPI, Response
 import uvicorn
-from pyrogram import Client
+from pyrogram import Client, filters
+from pyrogram.types import Message
 from bot.config import Config
 from bot.database.models import db
 from bot.utils.logger import logger
@@ -35,11 +36,186 @@ app = Client(
     "youtube_bot",
     bot_token=Config.BOT_TOKEN,
     api_id=Config.API_ID,
-    api_hash=Config.API_HASH,
-    plugins=dict(root="bot.handlers")
+    api_hash=Config.API_HASH
 )
 
 download_queue = DownloadQueue()
+
+# ---------- DIRECT HANDLERS (no plugins) ----------
+@app.on_message(filters.command("start") & filters.private)
+async def start_cmd(client, message: Message):
+    from bot.handlers.user import start_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("help") & filters.private)
+async def help_cmd(client, message: Message):
+    from bot.handlers.user import help_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("account") & filters.private)
+async def account_cmd(client, message: Message):
+    from bot.handlers.user import account_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("plan") & filters.private)
+async def plan_cmd(client, message: Message):
+    from bot.handlers.user import plan_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("myplan") & filters.private)
+async def myplan_cmd(client, message: Message):
+    from bot.handlers.user import myplan_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("terms") & filters.private)
+async def terms_cmd(client, message: Message):
+    from bot.handlers.user import terms_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("status") & filters.private)
+async def status_cmd(client, message: Message):
+    from bot.handlers.user import status_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("setthumbnail") & filters.private)
+async def set_thumbnail_cmd(client, message: Message):
+    from bot.handlers.thumbnail import set_thumbnail_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("remthumbnail") & filters.private)
+async def rem_thumbnail_cmd(client, message: Message):
+    from bot.handlers.thumbnail import rem_thumbnail_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("setchat") & filters.private)
+async def set_chat_cmd(client, message: Message):
+    from bot.handlers.upload import set_chat_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("removechat") & filters.private)
+async def remove_chat_cmd(client, message: Message):
+    from bot.handlers.upload import remove_chat_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("setcookies") & filters.private)
+async def set_cookies_cmd(client, message: Message):
+    from bot.handlers.cookies import set_cookies_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("removecookies") & filters.private)
+async def remove_cookies_cmd(client, message: Message):
+    from bot.handlers.cookies import remove_cookies_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("cookieinfo") & filters.private)
+async def cookie_info_cmd(client, message: Message):
+    from bot.handlers.cookies import cookie_info_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("cookiecheck") & filters.private)
+async def cookie_check_cmd(client, message: Message):
+    from bot.handlers.cookies import cookie_check_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.private & filters.regex(r'^(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.'))
+async def handle_url(client, message: Message):
+    from bot.handlers.download import handle_url as handler
+    await handler(client, message)
+
+# Admin Commands
+@app.on_message(filters.command("stats") & filters.private)
+async def stats_cmd(client, message: Message):
+    from bot.handlers.admin import stats_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("ban") & filters.private)
+async def ban_cmd(client, message: Message):
+    from bot.handlers.admin import ban_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("unban") & filters.private)
+async def unban_cmd(client, message: Message):
+    from bot.handlers.admin import unban_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("users") & filters.private)
+async def users_cmd(client, message: Message):
+    from bot.handlers.admin import users_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("get") & filters.private)
+async def get_user_cmd(client, message: Message):
+    from bot.handlers.admin import get_user_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("broadcast") & filters.private)
+async def broadcast_cmd(client, message: Message):
+    from bot.handlers.admin import broadcast_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("addpremium") & filters.private)
+async def add_premium_cmd(client, message: Message):
+    from bot.handlers.premium import add_premium_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("removepremium") & filters.private)
+async def remove_premium_cmd(client, message: Message):
+    from bot.handlers.premium import remove_premium_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("check") & filters.private)
+async def check_cmd(client, message: Message):
+    from bot.handlers.premium import check_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("getpremium") & filters.private)
+async def get_premium_cmd(client, message: Message):
+    from bot.handlers.premium import get_premium_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("premiumstats") & filters.private)
+async def premium_stats_cmd(client, message: Message):
+    from bot.handlers.premium import premium_stats_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("setownercookies") & filters.private)
+async def set_owner_cookies_cmd(client, message: Message):
+    from bot.handlers.cookies import set_owner_cookies_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("removeownercookies") & filters.private)
+async def remove_owner_cookies_cmd(client, message: Message):
+    from bot.handlers.cookies import remove_owner_cookies_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("checkcookies") & filters.private)
+async def check_cookies_cmd(client, message: Message):
+    from bot.handlers.cookies import check_cookies_cmd as handler
+    await handler(client, message)
+
+@app.on_message(filters.command("cookie_stats") & filters.private)
+async def cookie_stats_cmd(client, message: Message):
+    from bot.handlers.cookies import cookie_stats_cmd as handler
+    await handler(client, message)
+
+# ---------- Callbacks ----------
+@app.on_callback_query()
+async def handle_callback(client, callback_query):
+    from bot.handlers.download import download_callback, quality_callback
+    from bot.handlers.callback import help_callback, plans_callback
+    
+    data = callback_query.data
+    
+    if data.startswith("dl_"):
+        await download_callback(client, callback_query)
+    elif data.startswith("q_"):
+        await quality_callback(client, callback_query)
+    elif data == "help":
+        await help_callback(client, callback_query)
+    elif data == "plans":
+        await plans_callback(client, callback_query)
+    else:
+        await callback_query.answer("Unknown action")
 
 async def main():
     try:
