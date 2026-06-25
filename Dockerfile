@@ -15,4 +15,4 @@ RUN mkdir -p /app/downloads /app/bot/logs
 
 EXPOSE 8000
 
-CMD ["python", "-m", "bot.main"]
+CMD ["python", "-m", "bot.sample_main"]
