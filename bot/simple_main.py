@@ -1,4 +1,5 @@
 import asyncio
+import aiohttp
 from fastapi import FastAPI
 import uvicorn
 from pyrogram import Client, filters
@@ -127,6 +128,23 @@ async def debug_all(client: Client, message: Message):
     logger.info(f"📨 DEBUG - Message: '{message.text}' from {message.from_user.id}")
 
 # ============ MAIN ============
+async def delete_webhook():
+    """Delete webhook using direct HTTP request to Telegram API."""
+    url = f"https://api.telegram.org/bot{Config.BOT_TOKEN}/deleteWebhook"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                result = await resp.json()
+                if result.get("ok"):
+                    logger.info("✅ Webhook deleted successfully via HTTP.")
+                    return True
+                else:
+                    logger.warning(f"Webhook deletion failed: {result}")
+                    return False
+    except Exception as e:
+        logger.error(f"HTTP webhook deletion error: {e}")
+        return False
+
 async def main():
     try:
         # Connect to database
@@ -141,12 +159,8 @@ async def main():
         logger.info("Starting Telegram bot...")
         await app.start()
         
-        # 🔥 CRITICAL FIX: Delete any existing webhook to enable polling
-        try:
-            await app.delete_webhook()
-            logger.info("✅ Webhook deleted (if any) – polling is now active.")
-        except Exception as e:
-            logger.warning(f"Could not delete webhook: {e}")
+        # 🔥 DELETE WEBHOOK VIA HTTP (reliable)
+        await delete_webhook()
         
         # Get bot info
         me = await app.get_me()
