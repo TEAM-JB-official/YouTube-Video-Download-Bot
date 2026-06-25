@@ -127,9 +127,20 @@ async def handle_callback(client: Client, callback_query: CallbackQuery):
 async def debug_all(client: Client, message: Message):
     logger.info(f"📨 DEBUG - Message: '{message.text}' from {message.from_user.id}")
 
-# ============ MAIN ============
+# ============ HELPER: Webhook management ============
+async def get_webhook_info():
+    """Check current webhook status."""
+    url = f"https://api.telegram.org/bot{Config.BOT_TOKEN}/getWebhookInfo"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                return await resp.json()
+    except Exception as e:
+        logger.error(f"Failed to get webhook info: {e}")
+        return None
+
 async def delete_webhook():
-    """Delete webhook using direct HTTP request to Telegram API."""
+    """Delete webhook using direct HTTP request."""
     url = f"https://api.telegram.org/bot{Config.BOT_TOKEN}/deleteWebhook"
     try:
         async with aiohttp.ClientSession() as session:
@@ -145,6 +156,7 @@ async def delete_webhook():
         logger.error(f"HTTP webhook deletion error: {e}")
         return False
 
+# ============ MAIN ============
 async def main():
     try:
         # Connect to database
@@ -159,8 +171,30 @@ async def main():
         logger.info("Starting Telegram bot...")
         await app.start()
         
-        # 🔥 DELETE WEBHOOK VIA HTTP (reliable)
+        # Check current webhook status
+        webhook_info = await get_webhook_info()
+        if webhook_info and webhook_info.get("ok"):
+            url = webhook_info.get("result", {}).get("url")
+            if url:
+                logger.info(f"⚠️ Existing webhook found: {url}")
+            else:
+                logger.info("ℹ️ No webhook set.")
+        else:
+            logger.warning("Could not retrieve webhook info.")
+        
+        # Delete webhook (ensure polling)
         await delete_webhook()
+        
+        # Confirm deletion
+        webhook_info_after = await get_webhook_info()
+        if webhook_info_after and webhook_info_after.get("ok"):
+            url_after = webhook_info_after.get("result", {}).get("url")
+            if not url_after:
+                logger.info("✅ Webhook is cleared. Polling mode active.")
+            else:
+                logger.error(f"❌ Webhook still present: {url_after}")
+        else:
+            logger.warning("Could not confirm webhook deletion.")
         
         # Get bot info
         me = await app.get_me()
