@@ -129,7 +129,6 @@ async def debug_all(client: Client, message: Message):
 
 # ============ HELPER: Webhook management ============
 async def get_webhook_info():
-    """Check current webhook status."""
     url = f"https://api.telegram.org/bot{Config.BOT_TOKEN}/getWebhookInfo"
     try:
         async with aiohttp.ClientSession() as session:
@@ -140,7 +139,6 @@ async def get_webhook_info():
         return None
 
 async def delete_webhook():
-    """Delete webhook using direct HTTP request."""
     url = f"https://api.telegram.org/bot{Config.BOT_TOKEN}/deleteWebhook"
     try:
         async with aiohttp.ClientSession() as session:
@@ -159,63 +157,44 @@ async def delete_webhook():
 # ============ MAIN ============
 async def main():
     try:
-        # Connect to database
         await db.connect()
         logger.info("✅ Database connected.")
         
-        # Start web server
         asyncio.create_task(run_web())
         logger.info(f"✅ Web server started on port {Config.PORT}")
         
-        # Start Telegram bot
         logger.info("Starting Telegram bot...")
         await app.start()
         
-        # Check current webhook status
+        # Webhook cleanup
+        await delete_webhook()
         webhook_info = await get_webhook_info()
         if webhook_info and webhook_info.get("ok"):
             url = webhook_info.get("result", {}).get("url")
-            if url:
-                logger.info(f"⚠️ Existing webhook found: {url}")
+            if not url:
+                logger.info("✅ Webhook cleared. Polling mode active.")
             else:
-                logger.info("ℹ️ No webhook set.")
-        else:
-            logger.warning("Could not retrieve webhook info.")
+                logger.warning(f"⚠️ Webhook still set: {url}")
         
-        # Delete webhook (ensure polling)
-        await delete_webhook()
-        
-        # Confirm deletion
-        webhook_info_after = await get_webhook_info()
-        if webhook_info_after and webhook_info_after.get("ok"):
-            url_after = webhook_info_after.get("result", {}).get("url")
-            if not url_after:
-                logger.info("✅ Webhook is cleared. Polling mode active.")
-            else:
-                logger.error(f"❌ Webhook still present: {url_after}")
-        else:
-            logger.warning("Could not confirm webhook deletion.")
-        
-        # Get bot info
         me = await app.get_me()
         logger.info(f"✅ BOT ONLINE! Username: @{me.username}, ID: {me.id}")
         
-        # Send test message to admin
         if Config.ADMIN_IDS:
             try:
                 await app.send_message(
                     Config.ADMIN_IDS[0],
-                    f"✅ Bot is online and polling!\n\n"
+                    f"✅ Bot is online and listening for updates!\n\n"
                     f"Username: @{me.username}\n"
                     f"ID: {me.id}\n\n"
-                    "Send /start to test."
+                    "Send /ping to test."
                 )
                 logger.info(f"✅ Test message sent to admin")
             except Exception as e:
                 logger.error(f"Failed to send test message: {e}")
         
-        # Keep running
-        await asyncio.Event().wait()
+        # 🔥 THIS IS THE KEY: Keep the bot running and process updates.
+        logger.info("🔄 Bot is now listening for messages...")
+        await app.idle()  # This will keep the bot running and process updates
         
     except Exception as e:
         logger.error(f"Fatal error: {e}")
