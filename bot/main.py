@@ -687,6 +687,7 @@ async def delete_webhook():
         return False
 
 # ============ MAIN ============
+# ============ MAIN ============
 async def main():
     try:
         await db.connect()
@@ -726,8 +727,13 @@ async def main():
             except Exception as e:
                 logger.error(f"Failed to send test message: {e}")
         
+        # 🔥 KEEP THE BOT RUNNING – this works because app.start() already starts the update loop
         logger.info("🔄 Bot is now listening for messages...")
-        await asyncio.Event().wait()
+        
+        # Use a simple loop to keep the event loop alive and allow updates to process
+        while True:
+            await asyncio.sleep(10)
+            logger.debug("Bot heartbeat – still running")
         
     except Exception as e:
         logger.error(f"Fatal error: {e}")
