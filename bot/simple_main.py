@@ -141,6 +141,13 @@ async def main():
         logger.info("Starting Telegram bot...")
         await app.start()
         
+        # 🔥 CRITICAL FIX: Delete any existing webhook to enable polling
+        try:
+            await app.delete_webhook()
+            logger.info("✅ Webhook deleted (if any) – polling is now active.")
+        except Exception as e:
+            logger.warning(f"Could not delete webhook: {e}")
+        
         # Get bot info
         me = await app.get_me()
         logger.info(f"✅ BOT ONLINE! Username: @{me.username}, ID: {me.id}")
@@ -150,7 +157,10 @@ async def main():
             try:
                 await app.send_message(
                     Config.ADMIN_IDS[0],
-                    f"✅ Bot is online!\n\nUsername: @{me.username}\nID: {me.id}\n\nSend /start to test."
+                    f"✅ Bot is online and polling!\n\n"
+                    f"Username: @{me.username}\n"
+                    f"ID: {me.id}\n\n"
+                    "Send /start to test."
                 )
                 logger.info(f"✅ Test message sent to admin")
             except Exception as e:
