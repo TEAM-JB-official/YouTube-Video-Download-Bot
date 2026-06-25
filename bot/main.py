@@ -7,7 +7,7 @@ from pyrogram.types import Message
 from bot.config import Config
 from bot.database.models import db
 from bot.utils.logger import logger
-from bot.utils.queue import DownloadQueue
+from bot.utils.queue import download_queue  # Import the global instance
 
 # ============ WEB SERVER ============
 web_app = FastAPI()
@@ -65,7 +65,6 @@ from bot.handlers.admin import (
 from bot.handlers.callback import help_callback, plans_callback
 
 # ============ REGISTER ALL HANDLERS EXPLICITLY ============
-# User commands
 app.add_handler(start_cmd)
 app.add_handler(help_cmd)
 app.add_handler(account_cmd)
@@ -73,59 +72,39 @@ app.add_handler(plan_cmd)
 app.add_handler(myplan_cmd)
 app.add_handler(terms_cmd)
 app.add_handler(status_cmd)
-
-# Download commands
 app.add_handler(handle_url)
 app.add_handler(download_callback)
 app.add_handler(quality_callback)
-
-# Thumbnail commands
 app.add_handler(set_thumbnail_cmd)
 app.add_handler(rem_thumbnail_cmd)
-
-# Upload commands
 app.add_handler(set_chat_cmd)
 app.add_handler(remove_chat_cmd)
-
-# Cookie commands (user)
 app.add_handler(set_cookies_cmd)
 app.add_handler(remove_cookies_cmd)
 app.add_handler(cookie_info_cmd)
 app.add_handler(cookie_check_cmd)
-
-# Cookie commands (admin)
 app.add_handler(set_owner_cookies_cmd)
 app.add_handler(remove_owner_cookies_cmd)
 app.add_handler(check_cookies_cmd)
 app.add_handler(cookie_stats_cmd)
-
-# Premium admin commands
 app.add_handler(add_premium_cmd)
 app.add_handler(remove_premium_cmd)
 app.add_handler(check_cmd)
 app.add_handler(get_premium_cmd)
 app.add_handler(premium_stats_cmd)
-
-# Admin commands
 app.add_handler(stats_cmd)
 app.add_handler(ban_cmd)
 app.add_handler(unban_cmd)
 app.add_handler(users_cmd)
 app.add_handler(get_user_cmd)
 app.add_handler(broadcast_cmd)
-
-# Callbacks
 app.add_handler(help_callback)
 app.add_handler(plans_callback)
 
 # ============ FALLBACK DEBUG HANDLER ============
-# This will log EVERY private message to confirm the bot is receiving updates
 @app.on_message(filters.private)
 async def debug_all(client: Client, message: Message):
     logger.info(f"📨 DEBUG - Message: '{message.text}' from {message.from_user.id}")
-
-# ============ DOWNLOAD QUEUE ============
-download_queue = DownloadQueue()
 
 # ============ HELPER: Webhook management ============
 async def get_webhook_info():
@@ -201,9 +180,9 @@ async def main():
             except Exception as e:
                 logger.error(f"Failed to send test message: {e}")
         
-        # 🔥 KEEP THE BOT RUNNING – app.start() already runs the update loop
+        # Keep the bot running
         logger.info("🔄 Bot is now listening for messages...")
-        await asyncio.Event().wait()  # Block forever, letting the client process updates
+        await asyncio.Event().wait()
         
     except Exception as e:
         logger.error(f"Fatal error: {e}")
