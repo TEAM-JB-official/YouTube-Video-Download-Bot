@@ -2,9 +2,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -15,4 +13,5 @@ RUN mkdir -p /app/downloads /app/bot/logs
 
 EXPOSE 8000
 
-CMD ["python", "-m", "bot.sample_main"]
+# Use simple_main.py (correct file name)
+CMD ["python", "-m", "bot.simple_main"]
