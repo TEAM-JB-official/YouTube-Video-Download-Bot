@@ -1,5 +1,5 @@
 import asyncio
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 import uvicorn
 from pyrogram import Client
 from bot.config import Config
@@ -11,7 +11,12 @@ from bot.utils.queue import DownloadQueue
 web_app = FastAPI()
 
 @web_app.get("/")
+@web_app.head("/")
+async def root():
+    return {"status": "ok", "service": "YouTube Downloader Bot", "version": "1.0.0"}
+
 @web_app.get("/health")
+@web_app.head("/health")
 async def health():
     try:
         await db.connect()
@@ -21,7 +26,7 @@ async def health():
         return {"status": "error", "database": "disconnected", "error": str(e)}
 
 async def run_web():
-    config = uvicorn.Config(web_app, host="0.0.0.0", port=Config.PORT, log_level="info")
+    config = uvicorn.Config(web_app, host="0.0.0.0", port=Config.PORT, log_level="warning")
     server = uvicorn.Server(config)
     await server.serve()
 
