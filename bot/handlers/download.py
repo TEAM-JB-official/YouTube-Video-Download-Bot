@@ -3,7 +3,7 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 from bot.database.crud import get_user, create_user
 from bot.utils.decorators import rate_limit, check_ban
 from bot.utils.queue import DownloadJob
-from bot.main import download_queue
+from bot.utils.queue import download_queue
 from bot.config import Config
 from bot.utils.logger import logger
 
