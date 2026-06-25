@@ -14,4 +14,4 @@ RUN mkdir -p /app/downloads /app/bot/logs
 EXPOSE 8000
 
 # Use simple_main.py (correct file name)
-CMD ["python", "-m", "bot.simple_main"]
+CMD ["python", "-m", "bot.main"]
